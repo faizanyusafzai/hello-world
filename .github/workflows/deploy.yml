@@ -1,0 +1,51 @@
+name: Deploy Hello World to AWS S3
+
+on:
+  push:
+    branches:
+      - main # Change this to your main branch name
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 # Change this to your desired AWS region
+
+      - name: Deploy to AWS S3
+        run: |
+          # Generate a unique version ID, for example, using the current timestamp
+          version_id=$(date +%Y%m%d%H%M%S)
+
+          # Upload the application files to S3 with versioning
+          aws s3 cp . s3://gt-faizan-88/$version_id/ --recursive
+
+          # Update the website configuration to point to the new version
+          aws s3 website s3://your-s3-bucket-name/ --index-document index.html --error-document error.html --routing-rules '[{"Condition":{"HttpErrorCodeReturnedEquals":"404"},"RedirectRule":{"ReplaceKeyWith":"error.html"}}]'
+          
+          # Optionally, clean up older versions (e.g., keep only the last 5 versions)
+          aws s3 ls s3://gt-faizan-88/ | awk -F/ '{print $1}' | xargs -I {} aws s3 rm s3://your-s3-bucket-name/{}/ --recursive
+
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Sanity Check
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://gt-faizan-88.s3-website-us-east-1.amazonaws.com)
+          if [ "$response" == "200" ]; then
+            echo "Deployment is successful."
+          else
+            echo "Deployment failed. HTTP response code: $response"
+            exit 1
+          fi
+
