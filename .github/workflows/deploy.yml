@@ -29,10 +29,10 @@ jobs:
           aws s3 cp . s3://gt-faizan-88/$version_id/ --recursive
 
           # Update the website configuration to point to the new version
-          aws s3 website s3://your-s3-bucket-name/ --index-document index.html --error-document error.html --routing-rules '[{"Condition":{"HttpErrorCodeReturnedEquals":"404"},"RedirectRule":{"ReplaceKeyWith":"error.html"}}]'
+          aws s3 website s3://gt-faizan-88/ --index-document index.html --error-document error.html --routing-rules '[{"Condition":{"HttpErrorCodeReturnedEquals":"404"},"RedirectRule":{"ReplaceKeyWith":"error.html"}}]'
           
           # Optionally, clean up older versions (e.g., keep only the last 5 versions)
-          aws s3 ls s3://gt-faizan-88/ | awk -F/ '{print $1}' | xargs -I {} aws s3 rm s3://your-s3-bucket-name/{}/ --recursive
+          aws s3 ls s3://gt-faizan-88/ | awk -F/ '{print $1}' | xargs -I {} aws s3 rm s3://gt-faizan-88/{}/ --recursive
 
         env:
           AWS_DEFAULT_REGION: us-east-1
